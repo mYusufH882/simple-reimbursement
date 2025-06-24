@@ -50,8 +50,8 @@ class ReimbursementApproved extends Mailable
     public function content(): Content
     {
         return new Content(
-            html: 'emails.reimbursement.approved',
-            text: 'emails.reimbursement.approved-text',
+            html: 'emails.reimbursement.approved.approved',
+            text: 'emails.reimbursement.approved.approved-text',
             with: [
                 'reimbursement' => $this->reimbursement,
                 'employee' => $this->employee,
@@ -128,8 +128,8 @@ class ReimbursementRejected extends Mailable
     public function content(): Content
     {
         return new Content(
-            html: 'emails.reimbursement.rejected',
-            text: 'emails.reimbursement.rejected-text',
+            html: 'emails.reimbursement.rejected.rejected',
+            text: 'emails.reimbursement.rejected.rejected-text',
             with: [
                 'reimbursement' => $this->reimbursement,
                 'employee' => $this->employee,
@@ -199,8 +199,8 @@ class ReimbursementApprovedNotification extends Mailable
     public function content(): Content
     {
         return new Content(
-            html: 'emails.reimbursement.approved-notification',
-            text: 'emails.reimbursement.approved-notification-text',
+            html: 'emails.reimbursement.approved.approved-notification',
+            text: 'emails.reimbursement.approved.approved-notification-text',
             with: [
                 'reimbursement' => $this->reimbursement,
                 'admin' => $this->admin,
@@ -253,8 +253,8 @@ class ReimbursementRejectedNotification extends Mailable
     public function content(): Content
     {
         return new Content(
-            html: 'emails.reimbursement.rejected-notification',
-            text: 'emails.reimbursement.rejected-notification-text',
+            html: 'emails.reimbursement.rejected.rejected-notification',
+            text: 'emails.reimbursement.rejected.rejected-notification-text',
             with: [
                 'reimbursement' => $this->reimbursement,
                 'admin' => $this->admin,

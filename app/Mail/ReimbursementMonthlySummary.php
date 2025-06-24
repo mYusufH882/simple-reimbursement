@@ -50,8 +50,8 @@ class ReimbursementMonthlySummary extends Mailable
     public function content(): Content
     {
         return new Content(
-            html: 'emails.reimbursement.monthly-summary',
-            text: 'emails.reimbursement.monthly-summary-text',
+            html: 'emails.reimbursement.monthly-summary.monthly-summary',
+            text: 'emails.reimbursement.monthly-summary.monthly-summary-text',
             with: [
                 'manager' => $this->manager,
                 'summaryData' => $this->summaryData,
@@ -119,8 +119,8 @@ class ReimbursementPendingReminder extends Mailable
     public function content(): Content
     {
         return new Content(
-            html: 'emails.reimbursement.pending-reminder',
-            text: 'emails.reimbursement.pending-reminder-text',
+            html: 'emails.reimbursement.pending.pending-reminder',
+            text: 'emails.reimbursement.pending.pending-reminder-text',
             with: [
                 'manager' => $this->manager,
                 'pendingReimbursements' => $this->pendingReimbursements,
@@ -216,8 +216,8 @@ class ReimbursementLimitWarning extends Mailable
     public function content(): Content
     {
         return new Content(
-            html: 'emails.reimbursement.limit-warning',
-            text: 'emails.reimbursement.limit-warning-text',
+            html: 'emails.reimbursement.limit-warning.limit-warning',
+            text: 'emails.reimbursement.limit-warning.limit-warning-text',
             with: [
                 'employee' => $this->employee,
                 'limitData' => $this->limitData,

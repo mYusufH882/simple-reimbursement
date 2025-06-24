@@ -49,8 +49,8 @@ class ReimbursementSubmitted extends Mailable
     public function content(): Content
     {
         return new Content(
-            html: 'emails.reimbursement.submitted',
-            text: 'emails.reimbursement.submitted-text',
+            html: 'emails.reimbursement.submission.submitted',
+            text: 'emails.reimbursement.submission.submitted-text',
             with: [
                 'reimbursement' => $this->reimbursement,
                 'manager' => $this->manager,
@@ -104,8 +104,8 @@ class ReimbursementSubmittedConfirmation extends Mailable
     public function content(): Content
     {
         return new Content(
-            html: 'emails.reimbursement.submitted-confirmation',
-            text: 'emails.reimbursement.submitted-confirmation-text',
+            html: 'emails.reimbursement.submission.submitted-confirmation',
+            text: 'emails.reimbursement.submission.submitted-confirmation-text',
             with: [
                 'reimbursement' => $this->reimbursement,
                 'employee' => $this->employee,
