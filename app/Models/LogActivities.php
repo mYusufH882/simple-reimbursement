@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class LogActivies extends Model
+class LogActivities extends Model
 {
     const TYPE_NEW_REQUEST = 'new_request';
     const TYPE_CHANGE_STATUS = 'change_status';

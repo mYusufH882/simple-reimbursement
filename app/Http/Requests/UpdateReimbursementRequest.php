@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Category;
 use App\Models\Reimbursement;
 use Illuminate\Foundation\Http\FormRequest;
 

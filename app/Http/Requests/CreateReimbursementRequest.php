@@ -55,7 +55,7 @@ class CreateReimbursementRequest extends FormRequest
         ];
     }
 
-    public function withValidation($validator): void
+    public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
             if ($this->category_id) {
