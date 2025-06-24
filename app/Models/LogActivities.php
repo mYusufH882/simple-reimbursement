@@ -19,6 +19,7 @@ class LogActivities extends Model
         'loggable_id',
         'reimbursement_id',
         'ip_address',
+        'user_id',
         'user_agent',
     ];
 

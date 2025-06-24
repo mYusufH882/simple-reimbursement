@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Proof extends Model
 {
+    public $table = 'proof';
+
     protected $fillable = [
         'file_path',
         'file_name',

@@ -60,6 +60,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::middleware('owner')->group(function () {
             Route::get('{id}', [ReimbursementController::class, 'show']);
             Route::put('{id}', [ReimbursementController::class, 'update']);
+            Route::post('{id}', [ReimbursementController::class, 'update']);
             Route::delete('{id}', [ReimbursementController::class, 'destroy']);
         });
 

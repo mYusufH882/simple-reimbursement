@@ -46,7 +46,8 @@ class LogActivityService
                 'title' => $reimbursement->title,
                 'amount' => $reimbursement->amount,
                 'category' => $reimbursement->category->name,
-                'status' => $reimbursement->status
+                'status' => $reimbursement->status,
+                'proofs' => $reimbursement->proofs->pluck('filename')->toArray(),
             ]),
         );
     }

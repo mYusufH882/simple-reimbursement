@@ -13,7 +13,7 @@ class UpdateReimbursementRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        $reimbursementId = $this->route('reimbursement') ?? $this->route('id');
+        $reimbursementId = $this->route('id');
         $reimbursement = Reimbursement::find($reimbursementId);
 
         return auth()->check() &&
@@ -81,7 +81,7 @@ class UpdateReimbursementRequest extends FormRequest
 
     private function validateMonthlyLimit($validator): void
     {
-        $reimbursementId = $this->route('reimbursement') ?? $this->route('id');
+        $reimbursementId = $this->route('id');
         $currentReimbursement = Reimbursement::find($reimbursementId);
 
         $categoryId = $this->category_id ?? $currentReimbursement->category_id;
@@ -116,7 +116,7 @@ class UpdateReimbursementRequest extends FormRequest
 
     private function validateProofOwnership($validator): void
     {
-        $reimbursementId = $this->route('reimbursement') ?? $this->route('id');
+        $reimbursementId = $this->route('id');
 
         foreach ($this->delete_proof_ids as $proofId) {
             $proof = \App\Models\Proof::find($proofId);
