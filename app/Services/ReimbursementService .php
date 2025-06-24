@@ -4,19 +4,24 @@ namespace App\Services;
 
 use App\Models\Reimbursement;
 use App\Models\Proof;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ReimbursementService
 {
     protected $logActivityService;
     protected $fileUploadService;
+    protected $emailService;
 
     public function __construct(
         LogActivityService $logActivityService,
-        FileUploadService $fileUploadService
+        FileUploadService $fileUploadService,
+        EmailService $emailService
     ) {
         $this->logActivityService = $logActivityService;
         $this->fileUploadService = $fileUploadService;
+        $this->emailService = $emailService;
     }
 
     /**
@@ -43,6 +48,15 @@ class ReimbursementService
 
             // Log activity using specific method
             $this->logActivityService->logNewRequest($reimbursement);
+
+            try {
+                $this->emailService->sendReimbursementSubmitted($reimbursement);
+            } catch (\Exception $e) {
+                Log::error('Failed to send reimbursement submitted email', [
+                    'reimbursement_id' => $reimbursement->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
 
             return $reimbursement->load(['category', 'user', 'proofs']);
         });
@@ -133,6 +147,18 @@ class ReimbursementService
                 $managerId
             );
 
+            try {
+                $manager = User::find($managerId);
+                if ($manager) {
+                    $this->emailService->sendReimbursementApproved($reimbursement, $manager);
+                }
+            } catch (\Exception $e) {
+                Log::error('Failed to send approval email', [
+                    'reimbursement_id' => $reimbursement->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+
             return $reimbursement->load(['category', 'user', 'proofs']);
         });
     }
@@ -160,6 +186,18 @@ class ReimbursementService
                 Reimbursement::STATUS_REJECTED,
                 $managerId
             );
+
+            try {
+                $manager = User::find($managerId);
+                if ($manager) {
+                    $this->emailService->sendReimbursementRejected($reimbursement, $manager);
+                }
+            } catch (\Exception $e) {
+                Log::error('Failed to send rejection email', [
+                    'reimbursement_id' => $reimbursement->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
 
             return $reimbursement->load(['category', 'user', 'proofs']);
         });
