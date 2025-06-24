@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Traits\ApiResponseTrait;
 use App\Http\Requests\ApproveRejectRequest;
+use App\Http\Requests\CreateReimbursementRequest;
+use App\Http\Requests\UpdateReimbursementRequest;
 use App\Models\Reimbursement;
 use App\Services\ReimbursementService;
 use App\Services\CategoryService;
@@ -54,43 +56,18 @@ class ReimbursementController extends Controller
      * Store a newly created reimbursement
      * POST /api/reimbursements
      */
-    public function store(Request $request): JsonResponse
+    public function store(CreateReimbursementRequest $request): JsonResponse
     {
         try {
-            // Validasi input
-            $validated = $request->validate([
-                'title' => 'required|string|max:255',
-                'description' => 'required|string',
-                'amount' => 'required|numeric|min:0.01',
-                'category_id' => 'required|exists:categories,id',
-                'proofs' => 'required|array|min:1',
-                'proofs.*' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120' // 5MB max
-            ]);
-
-            // Check monthly limit sebelum create
-            $limitCheck = $this->categoryService->checkMonthlyLimit(
-                $validated['category_id'],
-                auth()->id(),
-                $validated['amount']
-            );
-
-            if (!$limitCheck['can_submit']) {
-                return $this->errorResponse(
-                    'Monthly limit exceeded for this category',
-                    422,
-                    $limitCheck
-                );
-            }
+            $validated = $request->validated();
 
             // Create reimbursement
             $reimbursement = $this->reimbursementService->create(
                 $validated,
-                $request->file('proofs')
+                $request->file('proofs') ?? [] // ← Handle jika tidak ada file
             );
 
             return $this->createdResponse($reimbursement, 'Reimbursement created successfully');
-        } catch (ValidationException $e) {
-            return $this->validationErrorResponse($e->errors());
         } catch (\Exception $e) {
             return $this->errorResponse('Failed to create reimbursement', 500, $e->getMessage());
         }
@@ -116,42 +93,11 @@ class ReimbursementController extends Controller
      * Update the specified reimbursement (only pending)
      * PUT /api/reimbursements/{id}
      */
-    public function update(Request $request, string $id): JsonResponse
+    public function update(UpdateReimbursementRequest $request, string $id): JsonResponse
     {
         try {
             $reimbursement = Reimbursement::findOrFail($id);
-
-            // Validasi input
-            $validated = $request->validate([
-                'title' => 'sometimes|string|max:255',
-                'description' => 'sometimes|string',
-                'amount' => 'sometimes|numeric|min:0.01',
-                'category_id' => 'sometimes|exists:categories,id',
-                'proofs' => 'sometimes|array',
-                'proofs.*' => 'file|mimes:jpg,jpeg,png,pdf|max:5120',
-                'delete_proof_ids' => 'sometimes|array',
-                'delete_proof_ids.*' => 'integer|exists:proofs,id'
-            ]);
-
-            // Check monthly limit jika amount atau category berubah
-            if (isset($validated['amount']) || isset($validated['category_id'])) {
-                $categoryId = $validated['category_id'] ?? $reimbursement->category_id;
-                $amount = $validated['amount'] ?? $reimbursement->amount;
-
-                $limitCheck = $this->categoryService->checkMonthlyLimit(
-                    $categoryId,
-                    $reimbursement->user_id,
-                    $amount
-                );
-
-                if (!$limitCheck['can_submit']) {
-                    return $this->errorResponse(
-                        'Monthly limit exceeded for this category',
-                        422,
-                        $limitCheck
-                    );
-                }
-            }
+            $validated = $request->validated();
 
             // Update reimbursement
             $updatedReimbursement = $this->reimbursementService->update(
@@ -162,8 +108,6 @@ class ReimbursementController extends Controller
             );
 
             return $this->updatedResponse($updatedReimbursement, 'Reimbursement updated successfully');
-        } catch (ValidationException $e) {
-            return $this->validationErrorResponse($e->errors());
         } catch (\Exception $e) {
             return $this->errorResponse('Failed to update reimbursement', 500, $e->getMessage());
         }

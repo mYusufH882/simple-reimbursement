@@ -49,7 +49,7 @@ class Reimbursement extends Model
 
     public function logActivities()
     {
-        return $this->hasMany(LogActivies::class);
+        return $this->hasMany(logActivities::class);
     }
 
     public function isPending()

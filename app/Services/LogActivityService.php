@@ -47,7 +47,7 @@ class LogActivityService
                 'amount' => $reimbursement->amount,
                 'category' => $reimbursement->category->name,
                 'status' => $reimbursement->status
-            ])
+            ]),
         );
     }
 

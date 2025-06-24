@@ -38,7 +38,7 @@ class UpdateReimbursementRequest extends FormRequest
 
             // Optional proof files for update
             'proofs' => 'sometimes|array|max:3',
-            'proofs.*' => 'required|file|mimes:pdf,jpg,jpeg|max:2048',
+            'proofs.*' => 'sometimes|file|mimes:pdf,jpg,jpeg|max:2048',
 
             // For deleting existing proofs
             'delete_proof_ids' => 'sometimes|array',
