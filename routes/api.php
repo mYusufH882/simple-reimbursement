@@ -101,6 +101,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Dashboard
         Route::get('dashboard', [AdminController::class, 'getDashboard']);
+        Route::get('system-stats', [AdminController::class, 'getSystemStats']);
 
         // User management routes
         Route::prefix('users')->group(function () {
@@ -111,6 +112,12 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::put('{id}/role', [AdminController::class, 'updateUserRole']);
             Route::post('{id}/reset-password', [AdminController::class, 'resetUserPassword']);
             Route::delete('{id}', [AdminController::class, 'deleteUser']);
+        });
+
+        Route::prefix('reimbursements')->group(function () {
+            Route::get('deleted', [AdminController::class, 'getDeletedReimbursements']);
+            Route::post('{id}/restore', [AdminController::class, 'restoreReimbursement']);
+            Route::delete('{id}/force-delete', [AdminController::class, 'forceDeleteReimbursement']);
         });
     });
 

@@ -276,7 +276,7 @@ class ReimbursementService
             $query->whereYear('created_at', $filters['year']);
         }
 
-        return $query->latest('created_at');
+        return $query->latest('created_at')->paginate(10);
     }
 
     /**

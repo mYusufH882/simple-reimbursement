@@ -6,6 +6,8 @@ use App\Traits\ApiResponseTrait;
 use App\Models\User;
 use App\Models\Reimbursement;
 use App\Models\Category;
+use App\Services\FileUploadService;
+use App\Services\LogActivityService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
@@ -323,5 +325,217 @@ class AdminController extends Controller
         } catch (\Exception $e) {
             return $this->errorResponse('Failed to reset password', 500, $e->getMessage());
         }
+    }
+
+    /**
+     * Get deleted reimbursements (Admin only)
+     * GET /api/admin/reimbursements/deleted
+     */
+    public function getDeletedReimbursements(Request $request): JsonResponse
+    {
+        try {
+            $query = Reimbursement::onlyTrashed()
+                ->with(['category', 'user', 'proofs', 'logActivities.user'])
+                ->latest('deleted_at');
+
+            // Apply filters
+            if ($request->filled('user_id')) {
+                $query->where('user_id', $request->user_id);
+            }
+
+            if ($request->filled('category_id')) {
+                $query->where('category_id', $request->category_id);
+            }
+
+            if ($request->filled('month')) {
+                $query->whereMonth('deleted_at', $request->month);
+            }
+
+            if ($request->filled('year')) {
+                $query->whereYear('deleted_at', $request->year);
+            }
+
+            $deletedReimbursements = $query->paginate($request->input('per_page', 15));
+
+            return $this->successResponse($deletedReimbursements, 'Deleted reimbursements retrieved successfully');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to retrieve deleted reimbursements', 500, $e->getMessage());
+        }
+    }
+
+    /**
+     * Restore deleted reimbursement (Admin only)
+     * POST /api/admin/reimbursements/{id}/restore
+     */
+    public function restoreReimbursement(string $id): JsonResponse
+    {
+        try {
+            $reimbursement = Reimbursement::withTrashed()->findOrFail($id);
+
+            if (!$reimbursement->trashed()) {
+                return $this->errorResponse('Reimbursement is not deleted', 422);
+            }
+
+            $reimbursement->restore();
+
+            // Log restoration activity
+            app(LogActivityService::class)->log(
+                "Reimbursement restored by admin: {$reimbursement->title}",
+                'restore',
+                $reimbursement,
+                'deleted',
+                'active',
+                auth()->id()
+            );
+
+            return $this->successResponse(
+                $reimbursement->load(['category', 'user', 'proofs']),
+                'Reimbursement restored successfully'
+            );
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to restore reimbursement', 500, $e->getMessage());
+        }
+    }
+
+    /**
+     * Permanently delete reimbursement (Admin only)
+     * DELETE /api/admin/reimbursements/{id}/force-delete
+     */
+    public function forceDeleteReimbursement(string $id): JsonResponse
+    {
+        try {
+            $reimbursement = Reimbursement::withTrashed()->findOrFail($id);
+
+            if (!$reimbursement->trashed()) {
+                return $this->errorResponse('Reimbursement must be soft deleted first', 422);
+            }
+
+            $title = $reimbursement->title;
+
+            // Delete associated files first
+            $proofs = $reimbursement->proofs;
+            foreach ($proofs as $proof) {
+                // Delete file from storage if FileUploadService exists
+                try {
+                    app(FileUploadService::class)->deleteProof($proof);
+                } catch (\Exception $e) {
+                    // Continue even if file deletion fails
+                }
+            }
+
+            // Permanently delete
+            $reimbursement->forceDelete();
+
+            return $this->successResponse(
+                null,
+                "Reimbursement '{$title}' permanently deleted"
+            );
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to permanently delete reimbursement', 500, $e->getMessage());
+        }
+    }
+
+    /**
+     * Get system statistics for admin dashboard
+     * GET /api/admin/system-stats
+     */
+    public function getSystemStats(): JsonResponse
+    {
+        try {
+            $stats = [
+                'storage' => [
+                    'total_space' => disk_total_space(storage_path()),
+                    'free_space' => disk_free_space(storage_path()),
+                    'used_space' => disk_total_space(storage_path()) - disk_free_space(storage_path()),
+                ],
+                'database' => [
+                    'total_reimbursements' => Reimbursement::count(),
+                    'deleted_reimbursements' => Reimbursement::onlyTrashed()->count(),
+                    'total_users' => User::count(),
+                    'total_categories' => Category::count(),
+                ],
+                'monthly_trends' => $this->getMonthlyTrends(),
+                'top_categories' => $this->getTopCategories(),
+                'user_activity' => $this->getUserActivityStats()
+            ];
+
+            return $this->successResponse($stats, 'System statistics retrieved successfully');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to retrieve system statistics', 500, $e->getMessage());
+        }
+    }
+
+    /**
+     * Get monthly trends for admin dashboard
+     */
+    private function getMonthlyTrends(): array
+    {
+        $months = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $date = now()->subMonths($i);
+            $months[] = [
+                'month' => $date->format('Y-m'),
+                'month_name' => $date->format('M Y'),
+                'submissions' => Reimbursement::whereYear('created_at', $date->year)
+                    ->whereMonth('created_at', $date->month)
+                    ->count(),
+                'approvals' => Reimbursement::where('status', 'approved')
+                    ->whereYear('approved_at', $date->year)
+                    ->whereMonth('approved_at', $date->month)
+                    ->count(),
+                'total_amount' => Reimbursement::where('status', 'approved')
+                    ->whereYear('approved_at', $date->year)
+                    ->whereMonth('approved_at', $date->month)
+                    ->sum('amount')
+            ];
+        }
+        return $months;
+    }
+
+    /**
+     * Get top categories by usage
+     */
+    private function getTopCategories(): array
+    {
+        return Category::withCount('reimbursements')
+            ->orderBy('reimbursements_count', 'desc')
+            ->limit(5)
+            ->get()
+            ->map(function ($category) {
+                return [
+                    'name' => $category->name,
+                    'count' => $category->reimbursements_count,
+                    'limit_type' => $category->limit_type,
+                    'limit_value' => $category->limit_value
+                ];
+            })->toArray();
+    }
+
+    /**
+     * Get user activity statistics
+     */
+    private function getUserActivityStats(): array
+    {
+        return [
+            'active_users_today' => Reimbursement::whereDate('created_at', today())
+                ->distinct('user_id')
+                ->count(),
+            'active_users_week' => Reimbursement::whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])
+                ->distinct('user_id')
+                ->count(),
+            'most_active_users' => User::withCount(['reimbursements' => function ($query) {
+                $query->whereMonth('created_at', now()->month);
+            }])
+                ->orderBy('reimbursements_count', 'desc')
+                ->limit(5)
+                ->get(['id', 'name', 'email'])
+                ->map(function ($user) {
+                    return [
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'submissions_this_month' => $user->reimbursements_count
+                    ];
+                })->toArray()
+        ];
     }
 }
