@@ -59,6 +59,7 @@ class CreateReimbursementRequest extends FormRequest
     {
         $validator->after(function ($validator) {
             if ($this->category_id) {
+                $this->validateMonthlyLimit($validator);
             }
         });
     }
@@ -67,7 +68,6 @@ class CreateReimbursementRequest extends FormRequest
     {
         $category = Category::find($this->category_id);
         $userId = auth()->id();
-        $currentMonth = now()->format('Y-m');
 
         $currentMonthQuery = Reimbursement::where('user_id', $userId)
             ->where('category_id', $this->category_id)
@@ -79,7 +79,7 @@ class CreateReimbursementRequest extends FormRequest
             $currentCount = $currentMonthQuery->count();
 
             if ($currentCount >= $category->limit_value) {
-                $validator->errors()->add('category_id', 'Kuota limit bulanan ({$category->limit_value}) untuk {$category->name} telah terlampaui.');
+                $validator->errors()->add('category_id', "Quota limit bulanan ({$category->limit_value}) untuk {$category->name} telah terlampaui.");
             }
         } else {
             $currentTotal = $currentMonthQuery->sum('amount');
