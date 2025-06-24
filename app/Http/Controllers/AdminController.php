@@ -78,7 +78,8 @@ class AdminController extends Controller
             }
 
             // Sort by latest first
-            $query->orderBy('created_at', 'desc');
+            $query->where('role', '!=', 'admin')
+                ->orderBy('created_at', 'desc');
 
             // Pagination
             $users = $query->paginate($request->input('per_page', 15));
@@ -97,6 +98,7 @@ class AdminController extends Controller
     {
         try {
             $user = User::select('id', 'name', 'email', 'role', 'email_verified_at', 'created_at', 'updated_at')
+                ->whereIn('role', [User::ROLE_EMPLOYEE, User::ROLE_MANAGER])
                 ->with(['reimbursements' => function ($query) {
                     $query->select('id', 'user_id', 'title', 'amount', 'status', 'created_at')
                         ->latest()

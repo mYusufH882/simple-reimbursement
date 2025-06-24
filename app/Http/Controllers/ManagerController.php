@@ -274,12 +274,61 @@ class ManagerController extends Controller
     {
         try {
             $users = User::select('id', 'name', 'email', 'role')
+                ->where('role', 'employee')
                 ->orderBy('name')
                 ->get();
 
             return $this->successResponse($users, 'Users list retrieved successfully');
         } catch (\Exception $e) {
             return $this->errorResponse('Failed to retrieve users', 500, $e->getMessage());
+        }
+    }
+
+    /**
+     * Get user detail (Manager can only view employee details)
+     * GET /api/manager/users/{id}
+     */
+    public function getUserDetail(string $id): JsonResponse
+    {
+        try {
+            $currentUser = auth()->user();
+
+            $query = User::select('id', 'name', 'email', 'role', 'email_verified_at', 'created_at', 'updated_at')
+                ->where('role', User::ROLE_EMPLOYEE)
+                ->with(['reimbursements' => function ($query) {
+                    $query->select('id', 'user_id', 'title', 'amount', 'status', 'created_at')
+                        ->latest()
+                        ->limit(10); // Latest 10 reimbursements
+                }]);
+
+            // Role-based access control
+            if ($currentUser->isManager()) {
+                // Manager hanya bisa lihat detail employee
+                $query->where('role', User::ROLE_EMPLOYEE);
+            }
+            // Admin bisa lihat detail semua user (no additional filter)
+
+            $user = $query->findOrFail($id);
+
+            // Add user statistics
+            $userStats = [
+                'total_reimbursements' => $user->reimbursements()->count(),
+                'pending_reimbursements' => $user->reimbursements()->where('status', 'pending')->count(),
+                'approved_reimbursements' => $user->reimbursements()->where('status', 'approved')->count(),
+                'rejected_reimbursements' => $user->reimbursements()->where('status', 'rejected')->count(),
+                'total_approved_amount' => $user->reimbursements()->where('status', 'approved')->sum('amount'),
+                'last_activity' => $user->reimbursements()->latest()->first()?->created_at,
+                'current_month_submissions' => $user->reimbursements()
+                    ->whereMonth('created_at', now()->month)
+                    ->whereYear('created_at', now()->year)
+                    ->count()
+            ];
+
+            $user->statistics = $userStats;
+
+            return $this->successResponse($user, 'User detail retrieved successfully');
+        } catch (\Exception $e) {
+            return $this->notFoundResponse('User not found or access denied');
         }
     }
 

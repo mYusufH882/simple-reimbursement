@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Category extends Model
 {
+    public $table = 'categories';
+
     const LIMIT_TYPE_QUOTA = 'quota';
     const LIMIT_TYPE_AMOUNT = 'amount';
 

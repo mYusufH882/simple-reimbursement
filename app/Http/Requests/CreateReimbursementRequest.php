@@ -29,8 +29,8 @@ class CreateReimbursementRequest extends FormRequest
             'description' => 'required|string|max:1000',
             'amount' => 'required|numeric|min:0.01|max:99999999.99',
             'category_id' => 'required|exists:categories,id',
-            'proofs' => 'required|array|min:1|max:3',
-            'proofs.*' => 'required|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'proofs' => 'sometimes|array|min:1|max:3',
+            'proofs.*' => 'sometimes|file|mimes:jpg,jpeg,png,pdf|max:2048',
         ];
     }
 
@@ -45,10 +45,10 @@ class CreateReimbursementRequest extends FormRequest
             'category_id.required' => 'Category is required',
             'category_id.exists' => 'Selected category does not exist',
 
-            'proofs.required' => 'At least one proof file is required',
+            // 'proofs.required' => 'At least one proof file is required',
             'proofs.min' => 'At least one proof file is required',
             'proofs.max' => 'Maximum 3 proof files allowed',
-            'proofs.*.required' => 'Proof file is required',
+            // 'proofs.*.required' => 'Proof file is required',
             'proofs.*.file' => 'Proof must be a valid file',
             'proofs.*.mimes' => 'Proof file must be PDF, JPG, or JPEG',
             'proofs.*.max' => 'Proof file size must not exceed 2MB',

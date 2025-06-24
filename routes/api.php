@@ -128,20 +128,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Users list (for filtering purposes)
         Route::get('users', [ManagerController::class, 'getUsers']);
-    });
-
-    // ==========================================
-    // UTILITY ROUTES
-    // ==========================================
-
-    // Health check for authenticated users
-    Route::get('health', function () {
-        return response()->json([
-            'success' => true,
-            'message' => 'API is working',
-            'user' => auth()->user()->only(['id', 'name', 'role']),
-            'timestamp' => now()
-        ]);
+        Route::get('users/{id}', [ManagerController::class, 'getUserDetail']);
     });
 
     // Get current user info (legacy support)

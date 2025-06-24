@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Reimbursement extends Model
 {
+    public $table = 'reimbursement';
+
     const STATUS_PENDING = 'pending';
     const STATUS_APPROVED = 'approved';
     const STATUS_REJECTED = 'rejected';

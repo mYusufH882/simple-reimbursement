@@ -6,11 +6,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasApiTokens;
 
     const ROLE_ADMIN = 'admin';
     const ROLE_EMPLOYEE = 'employee';
@@ -58,7 +59,7 @@ class User extends Authenticatable
 
     public function logActivities()
     {
-        return $this->hasMany(LogActivies::class);
+        return $this->hasMany(logActivities::class);
     }
 
     public function isAdmin()

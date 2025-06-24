@@ -23,7 +23,7 @@ class RoleMiddleware
 
         $user = auth()->user();
 
-        if (in_array($user->role, $roles)) {
+        if (!in_array($user->role, $roles)) {
             return response()->json([
                 'message' => 'Forbidden. Required roles: ' . implode(', ', $roles),
             ], 403);
